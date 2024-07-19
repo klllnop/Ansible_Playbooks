@@ -2,6 +2,8 @@
 
 This Ansible playbook is designed to check the gateway IP for Docker containers running on specified hosts. It inspects each Docker container and logs the IP addresses of hosts where the gateway IP matches a specific pattern (172.17.0.1).
 
+**_NOTE: YOU CAN CHANGE THE IP ADDRESS TO LOOKUP INSIDE THE PLAYBOOK FILE_**
+
 **Prerequisites:**
 
 Ansible 2.9+ installed on the control machine
@@ -37,3 +39,19 @@ docker_containers.stdout_lines: List of Docker container IDs.
 inspect_output.results: Result of the Docker container inspection.
 
 matching_hosts_fact.results: List of hosts with matching gateway IP.
+
+**Usage**
+
+1- Clone the repository and enter on his folder
+
+2- Update the copy task in the playbook with the desired file path:
+
+copy:
+
+  content: "{{ host_ip }}"
+
+  dest: /path/to/your/directory/extracao_docker.txt
+  
+3- Run the playbook with the command -> ansible-playbook -i your_hosts_inventory_file check_docker_networks.yml
+
+**_AUTHOR: MARCO SIMÕES_**
