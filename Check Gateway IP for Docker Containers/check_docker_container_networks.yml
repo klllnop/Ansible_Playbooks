@@ -1,0 +1,37 @@
+---
+- name: Check Gateway IP for Docker containers
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Get Docker container IDs
+      shell: docker ps -q
+      register: docker_containers
+      changed_when: false
+
+    - name: Inspect each Docker container
+      command: docker inspect {{ item }}
+      register: inspect_output
+      with_items: "{{ docker_containers.stdout_lines }}"
+      changed_when: false
+
+    - name: Check for Gateway IP in output
+      set_fact:
+        host_ip: "{{ ansible_host }}"
+      loop: "{{ inspect_output.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+        #change the 172.17.0.1 for any IP that you want
+      when: "'172.17.0.1' in item.stdout"
+      register: matching_hosts_fact
+
+    - name: Write IPs to file on Ansible control machine
+      copy:
+        content: "{{ host_ip }}"
+        #change the file directory to your own
+        dest: /home/ansible/docker_extraction.txt
+      with_items: "{{ matching_hosts_fact.results }}"
+      delegate_to: localhost
+      #this line is the condition to only add the machine ip to the file if there is atleast 1 container with the Gateway IP matching the pattern
+      when: matching_hosts_fact.results | length > 0 and host_ip is defined
+      ignore_errors: yes
