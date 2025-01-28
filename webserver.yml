@@ -1,0 +1,67 @@
+---
+- name: Configuração do Servidor Web com Virtual Host no Rocky Linux 9
+  hosts: all
+  become: true
+
+  vars:
+    apache_document_root: "/var/www/marco.pt"
+    apache_virtual_host_file: "/etc/httpd/conf.d/marco.pt.conf"
+    server_name: "marco.pt"
+    server_admin: "admin@marco.pt"
+
+  tasks:
+    - name: Instalar Apache (httpd)
+      package:
+        name: httpd
+        state: present
+
+    - name: Iniciar e habilitar o Apache no boot
+      service:
+        name: httpd
+        state: started
+        enabled: true
+
+    - name: Criar diretório para o virtual host
+      file:
+        path: "{{ apache_document_root }}"
+        state: directory
+        owner: apache
+        group: apache
+        mode: '0755'
+
+    - name: Criar página inicial para o site
+      copy:
+        dest: "{{ apache_document_root }}/index.html"
+        content: |
+          <html>
+          <head>
+              <title>Bem-vindo ao {{ server_name }}</title>
+          </head>
+          <body>
+              <h1>O site {{ server_name }} está funcionando!</h1>
+          </body>
+          </html>
+        owner: apache
+        group: apache
+        mode: '0644'
+
+    - name: Configurar o Virtual Host
+      template:
+        src: meusite.conf.j2
+        dest: "{{ apache_virtual_host_file }}"
+        mode: '0644'
+
+    - name: Configurar o firewall para permitir tráfego HTTP e HTTPS
+      firewalld:
+        port: "{{ item.port }}"
+        protocol: "{{ item.protocol }}"
+        permanent: true
+        state: enabled
+      loop:
+        - { port: 80, protocol: tcp }
+        - { port: 443, protocol: tcp }
+
+    - name: Reiniciar o Apache para aplicar as configurações
+      service:
+        name: httpd
+        state: restarted
