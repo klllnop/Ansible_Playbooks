@@ -53,13 +53,12 @@
 
     - name: Configurar o firewall para permitir tráfego HTTP e HTTPS
       firewalld:
-        port: "{{ item.port }}"
-        protocol: "{{ item.protocol }}"
+        service: "{{ item }}"
         permanent: true
         state: enabled
       loop:
-        - { port: 80, protocol: tcp }
-        - { port: 443, protocol: tcp }
+        - http
+        - https
 
     - name: Reiniciar o Apache para aplicar as configurações
       service:
