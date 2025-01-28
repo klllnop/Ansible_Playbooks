@@ -60,6 +60,10 @@
         - http
         - https
 
+    - name: Reiniciar o serviço de firewall para aplicar as novas regras
+      firewalld:
+        state: reloaded
+
     - name: Reiniciar o Apache para aplicar as configurações
       service:
         name: httpd
