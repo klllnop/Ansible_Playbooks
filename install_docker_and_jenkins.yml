@@ -1,0 +1,64 @@
+- name: Instalar Docker e configurar Jenkins
+  hosts: all
+  become: true
+  tasks:
+
+    - name: Instalar pacotes necessários
+      dnf:
+        name:
+          - dnf-plugins-core
+          - curl
+        state: present
+
+    - name: Adicionar repositório Docker
+      shell: |
+        dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+    - name: Instalar Docker
+      dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+    - name: Iniciar e habilitar o serviço Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Adicionar usuário ansible ao grupo docker (opcional)
+      user:
+        name: marco
+        groups: docker
+        append: yes
+
+    - name: Baixar a imagem do Jenkins
+      community.docker.docker_image:
+        name: jenkins/jenkins:lts
+        source: pull
+
+    - name: Criar e iniciar o container do Jenkins
+      community.docker.docker_container:
+        name: jenkins
+        image: jenkins/jenkins:lts
+        state: started
+        restart_policy: always
+        ports:
+          - "8080:8080"
+          - "50000:50000"
+
+    - name: Aguardar o Jenkins inicializar completamente
+      pause:
+        seconds: 30
+
+    - name: Obter a senha inicial do Jenkins
+      community.docker.docker_container_exec:
+        container: jenkins
+        command: cat /var/jenkins_home/secrets/initialAdminPassword
+      register: jenkins_password
+
+    - name: Exibir a senha inicial do Jenkins
+      debug:
+        msg: "A senha inicial do Jenkins é: {{ jenkins_password.stdout }}"
